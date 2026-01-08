@@ -149,18 +149,23 @@ function renderTable(data) {
     let lastMonthName = ""; 
     let colorIndex = 0;
 
+    // Starter på 1 for å hoppe over overskriften i Excel
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
-        if (!row || row.length < 2) continue;
+        
+        // SJEKK: Hvis raden er tom eller de to første cellene mangler innhold, hopp over raden
+        if (!row || row.length === 0) continue;
+        
+        const mnd = (row[0] || "").toString().trim();
+        const akt = (row[1] || "").toString().trim();
+        
+        // Hvis både måned og aktivitet er tomme, er dette en "spøkelsesrad" fra Excel
+        if (mnd === "" && akt === "") continue;
 
-        const mnd = row[0] || "";
-        const akt = row[1] || "";
-        
-        // Her bruker vi den nye formatteringsfunksjonen på datofeltet (kolonne index 2)
+        // Her bruker vi formateringsfunksjonen på datofeltet
         const dat = formatExcelDate(row[2]);
-        
-        const del = row[3] || "";
-        const ans = row[4] || "";
+        const del = (row[3] || "").toString().trim();
+        const ans = (row[4] || "").toString().trim();
 
         if (mnd !== "" && mnd.toLowerCase() !== lastMonthName.toLowerCase()) {
             colorIndex = (colorIndex + 1) % 6;
