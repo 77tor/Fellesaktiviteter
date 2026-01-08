@@ -93,7 +93,6 @@
 </div>
 
 <script>
-// Denne banen fungerer på GitHub Pages så lenge fila ligger i samme mappe
 const EXCEL_FILE = 'Fellesaktiviteter.xlsx';
 
 async function fetchData() {
@@ -106,19 +105,15 @@ async function fetchData() {
         
         const arrayBuffer = await response.arrayBuffer();
         
-        // Vi leser fila, men her ber vi om å beholde rådataene for datoer
+        // Leser fila med støtte for både tekst og datoobjekter
         const workbook = XLSX.read(arrayBuffer, {
-            cellDates: true, 
-            cellText: false
+            cellDates: true,
+            cellNF: true,
+            cellText: true
         });
         
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        
-        // Vi henter dataene som en matrise
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-            header: 1,
-            defval: "" 
-        });
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: "" });
         
         if (jsonData.length > 0) {
             renderTable(jsonData);
@@ -132,15 +127,18 @@ async function fetchData() {
     }
 }
 
-// Hjelpefunksjon for å formatere datoen manuelt til dd.mm.yyyy
+// Skuddsikker datofunksjon (Løser tallkodeproblemet)
 function formatExcelDate(val) {
-    if (val instanceof Date) {
-        const d = String(val.getDate()).padStart(2, '0');
-        const m = String(val.getMonth() + 1).padStart(2, '0');
-        const y = val.getFullYear();
-        return `${d}.${m}.${y}`;
+    if (val instanceof Date) return formatDateObject(val);
+    if (typeof val === 'number' && val > 40000) {
+        const dateObj = XLSX.SSF.parse_date_code(val);
+        return `${String(dateObj.d).padStart(2, '0')}.${String(dateObj.m).padStart(2, '0')}.${dateObj.y}`;
     }
-    return val; // Hvis det allerede er tekst (f.eks. "Uke 33"), returner det som det er
+    return val;
+}
+
+function formatDateObject(date) {
+    return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
 }
 
 function renderTable(data) {
@@ -149,20 +147,16 @@ function renderTable(data) {
     let lastMonthName = ""; 
     let colorIndex = 0;
 
-    // Starter på 1 for å hoppe over overskriften i Excel
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
-        
-        // SJEKK: Hvis raden er tom eller de to første cellene mangler innhold, hopp over raden
         if (!row || row.length === 0) continue;
         
         const mnd = (row[0] || "").toString().trim();
         const akt = (row[1] || "").toString().trim();
         
-        // Hvis både måned og aktivitet er tomme, er dette en "spøkelsesrad" fra Excel
+        // Hopper over tomme rader
         if (mnd === "" && akt === "") continue;
 
-        // Her bruker vi formateringsfunksjonen på datofeltet
         const dat = formatExcelDate(row[2]);
         const del = (row[3] || "").toString().trim();
         const ans = (row[4] || "").toString().trim();
@@ -179,6 +173,47 @@ function renderTable(data) {
     }
     document.getElementById('aktivitetsTabell').style.display = 'table';
 }
+
+// FILTERFUNKSJONEN SOM MANGLER
+function filterTable() {
+    const search = document.getElementById("searchInput").value.toUpperCase();
+    const dTrinn = document.getElementById("deltakerFilter").value;
+    const aVal = document.getElementById("ansvarFilter").value;
+    const rows = document.querySelectorAll("#tableBody tr");
+
+    rows.forEach(row => {
+        const cells = row.getElementsByTagName("td");
+        if (cells.length < 5) return;
+        
+        const dText = cells[3].textContent.toUpperCase();
+        const aText = cells[4].textContent.toUpperCase();
+        const fullText = row.textContent.toUpperCase();
+
+        // Logikk for Deltakelse (inkl. Heståsen/Brattbakken kobling)
+        let mD = (dTrinn === "");
+        if (!mD) {
+            const erH = ["1.", "2.", "3."].includes(dTrinn);
+            const erB = ["4.", "5.", "6.", "7."].includes(dTrinn);
+            mD = dText.includes(dTrinn) || dText.includes("ALLE TRINN") || (erH && dText.includes("HESTÅSEN")) || (erB && dText.includes("BRATTBAKKEN"));
+        }
+
+        // Logikk for Ansvar
+        let mA = (aVal === "");
+        if (!mA) {
+            const erH = ["1.", "2.", "3."].includes(aVal);
+            const erB = ["4.", "5.", "6.", "7."].includes(aVal);
+            if (["FAU", "KIRKA", "ELEVRÅDET"].includes(aVal)) {
+                mA = aText.includes(aVal);
+            } else {
+                mA = aText.includes(aVal) || aText.includes("ALLE TRINN") || (erH && aText.includes("HESTÅSEN")) || (erB && aText.includes("BRATTBAKKEN"));
+            }
+        }
+
+        const mSearch = fullText.includes(search);
+        row.style.display = (mD && mA && mSearch) ? "" : "none";
+    });
+}
+
 function resetFilters() {
     document.getElementById("searchInput").value = "";
     document.getElementById("deltakerFilter").value = "";
