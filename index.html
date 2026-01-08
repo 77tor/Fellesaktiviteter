@@ -101,21 +101,28 @@ async function fetchData() {
     const updateDisplay = document.getElementById('lastUpdated');
 
     try {
-        // Vi legger til et tidsstempel for å unngå at nettleseren cacher en gammel versjon av Excel-fila
         const response = await fetch(EXCEL_FILE + "?t=" + new Date().getTime());
-        if (!response.ok) throw new Error("Fant ikke Excel-fila på GitHub.");
+        if (!response.ok) throw new Error("Fant ikke Excel-fila.");
         
         const arrayBuffer = await response.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer);
+        const workbook = XLSX.read(arrayBuffer, {
+            cellDates: true, // Forteller SheetJS at dato-celler skal behandles som datoer
+            dateNF: 'dd.mm.yyyy' // Definerer ønsket datoformat
+        });
+        
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         
-        // Konverterer Excel-rader til JSON (matrise)
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        // Vi bruker sheet_to_json med 'raw: false' for å få ut teksten slik den ser ut i cellene
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1, 
+            raw: false, 
+            defval: "" 
+        });
         
         if (jsonData.length > 0) {
             renderTable(jsonData);
             const nå = new Date();
-            updateDisplay.innerHTML = "Planen ble hentet fra GitHub: " + nå.toLocaleDateString('no-NO') + " kl. " + nå.toLocaleTimeString('no-NO', {hour:'2-digit', minute:'2-digit'});
+            updateDisplay.innerHTML = "Planen ble hentet: " + nå.toLocaleDateString('no-NO') + " kl. " + nå.toLocaleTimeString('no-NO', {hour:'2-digit', minute:'2-digit'});
             loader.style.display = 'none';
         }
     } catch (err) {
