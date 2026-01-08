@@ -105,17 +105,18 @@ async function fetchData() {
         if (!response.ok) throw new Error("Fant ikke Excel-fila.");
         
         const arrayBuffer = await response.arrayBuffer();
+        
+        // Vi leser fila, men her ber vi om å beholde rådataene for datoer
         const workbook = XLSX.read(arrayBuffer, {
-            cellDates: true, // Forteller SheetJS at dato-celler skal behandles som datoer
-            dateNF: 'dd.mm.yyyy' // Definerer ønsket datoformat
+            cellDates: true, 
+            cellText: false
         });
         
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         
-        // Vi bruker sheet_to_json med 'raw: false' for å få ut teksten slik den ser ut i cellene
+        // Vi henter dataene som en matrise
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-            header: 1, 
-            raw: false, 
+            header: 1,
             defval: "" 
         });
         
@@ -131,20 +132,33 @@ async function fetchData() {
     }
 }
 
+// Hjelpefunksjon for å formatere datoen manuelt til dd.mm.yyyy
+function formatExcelDate(val) {
+    if (val instanceof Date) {
+        const d = String(val.getDate()).padStart(2, '0');
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const y = val.getFullYear();
+        return `${d}.${m}.${y}`;
+    }
+    return val; // Hvis det allerede er tekst (f.eks. "Uke 33"), returner det som det er
+}
+
 function renderTable(data) {
     const tableBody = document.getElementById('tableBody');
     tableBody.innerHTML = ""; 
     let lastMonthName = ""; 
     let colorIndex = 0;
 
-    // Starter på 1 for å hoppe over overskriften i Excel
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
         if (!row || row.length < 2) continue;
 
         const mnd = row[0] || "";
         const akt = row[1] || "";
-        const dat = row[2] || "";
+        
+        // Her bruker vi den nye formatteringsfunksjonen på datofeltet (kolonne index 2)
+        const dat = formatExcelDate(row[2]);
+        
         const del = row[3] || "";
         const ans = row[4] || "";
 
@@ -160,40 +174,6 @@ function renderTable(data) {
     }
     document.getElementById('aktivitetsTabell').style.display = 'table';
 }
-
-function filterTable() {
-    const search = document.getElementById("searchInput").value.toUpperCase();
-    const dTrinn = document.getElementById("deltakerFilter").value;
-    const aVal = document.getElementById("ansvarFilter").value;
-    const rows = document.querySelectorAll("#tableBody tr");
-
-    rows.forEach(row => {
-        const cells = row.getElementsByTagName("td");
-        const dText = cells[3].textContent.toUpperCase();
-        const aText = cells[4].textContent.toUpperCase();
-        const fullText = row.textContent.toUpperCase();
-
-        let mD = (dTrinn === "");
-        if (!mD) {
-            const erH = ["1.", "2.", "3."].includes(dTrinn);
-            const erB = ["4.", "5.", "6.", "7."].includes(dTrinn);
-            mD = dText.includes(dTrinn) || dText.includes("ALLE TRINN") || (erH && dText.includes("HESTÅSEN")) || (erB && dText.includes("BRATTBAKKEN"));
-        }
-
-        let mA = (aVal === "");
-        if (!mA) {
-            const erH = ["1.", "2.", "3."].includes(aVal);
-            const erB = ["4.", "5.", "6.", "7."].includes(aVal);
-            if (["FAU", "KIRKA", "ELEVRÅDET"].includes(aVal)) {
-                mA = aText.includes(aVal);
-            } else {
-                mA = aText.includes(aVal) || aText.includes("ALLE TRINN") || (erH && aText.includes("HESTÅSEN")) || (erB && aText.includes("BRATTBAKKEN"));
-            }
-        }
-        row.style.display = (mD && mA && fullText.includes(search)) ? "" : "none";
-    });
-}
-
 function resetFilters() {
     document.getElementById("searchInput").value = "";
     document.getElementById("deltakerFilter").value = "";
