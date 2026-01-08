@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skoleplan 2025/2026 - GitHub Live</title>
+    <title>Skoleplan 2025/2026</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f8f9fa; color: #333; }
@@ -18,7 +18,6 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; display: none; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #edf2f7; font-size: 14px; }
         th { background-color: #34495e; color: white; text-transform: uppercase; font-size: 11px; }
-        
         .month-color-0 { background-color: #ffffff !important; }
         .month-color-1 { background-color: #f0f7ff !important; }
         .month-color-2 { background-color: #f5f0ff !important; }
@@ -26,7 +25,6 @@
         .month-color-4 { background-color: #fffaf0 !important; }
         .month-color-5 { background-color: #fff0f0 !important; }
         tr:hover { background-color: #e2e8f0 !important; }
-
         .btn-reset { grid-column: 1 / -1; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .footer-info { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #7f8c8d; }
     </style>
@@ -40,11 +38,11 @@
     <div class="controls">
         <div class="filter-group">
             <label>Søk</label>
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Søk tekst...">
+            <input type="text" id="searchInput" placeholder="Søk tekst...">
         </div>
         <div class="filter-group">
             <label>Deltakelse</label>
-            <select id="deltakerFilter" onchange="filterTable()">
+            <select id="deltakerFilter">
                 <option value="">Vis alle</option>
                 <option value="1.">1. trinn</option>
                 <option value="2.">2. trinn</option>
@@ -57,7 +55,7 @@
         </div>
         <div class="filter-group">
             <label>Ansvar</label>
-            <select id="ansvarFilter" onchange="filterTable()">
+            <select id="ansvarFilter">
                 <option value="">Vis alle</option>
                 <optgroup label="Klassetrinn">
                     <option value="1.">1. trinn</option>
@@ -75,10 +73,10 @@
                 </optgroup>
             </select>
         </div>
-        <button class="btn-reset" onclick="resetFilters()">Nullstill filtre</button>
+        <button class="btn-reset" id="resetBtn">Nullstill filtre</button>
     </div>
 
-    <div id="loader" class="status-msg">Laster skoleplan fra Excel...</div>
+    <div id="loader" class="status-msg">Henter plan...</div>
     
     <table id="aktivitetsTabell">
         <thead>
@@ -95,133 +93,121 @@
 <script>
 const EXCEL_FILE = 'Fellesaktiviteter.xlsx';
 
+// 1. HENTING AV DATA
 async function fetchData() {
-    const loader = document.getElementById('loader');
-    const updateDisplay = document.getElementById('lastUpdated');
-
     try {
         const response = await fetch(EXCEL_FILE + "?t=" + new Date().getTime());
-        if (!response.ok) throw new Error("Fant ikke Excel-fila.");
-        
+        if (!response.ok) throw new Error("Fant ikke filen.");
         const arrayBuffer = await response.arrayBuffer();
-        
-        // Leser fila med støtte for både tekst og datoobjekter
-        const workbook = XLSX.read(arrayBuffer, {
-            cellDates: true,
-            cellNF: true,
-            cellText: true
-        });
-        
+        const workbook = XLSX.read(arrayBuffer, { cellDates: true });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: "" });
         
         if (jsonData.length > 0) {
             renderTable(jsonData);
-            const nå = new Date();
-            updateDisplay.innerHTML = "Planen ble hentet: " + nå.toLocaleDateString('no-NO') + " kl. " + nå.toLocaleTimeString('no-NO', {hour:'2-digit', minute:'2-digit'});
-            loader.style.display = 'none';
+            document.getElementById('lastUpdated').innerHTML = "Oppdatert: " + new Date().toLocaleString('no-NO');
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('aktivitetsTabell').style.display = 'table';
         }
     } catch (err) {
-        console.error(err);
-        loader.innerHTML = "Kunne ikke laste plan: " + err.message;
+        document.getElementById('loader').innerHTML = "Feil: " + err.message;
     }
 }
 
-// Skuddsikker datofunksjon (Løser tallkodeproblemet)
+// 2. DATO-FORMATERING
 function formatExcelDate(val) {
-    if (val instanceof Date) return formatDateObject(val);
+    if (val instanceof Date) return `${String(val.getDate()).padStart(2,'0')}.${String(val.getMonth()+1).padStart(2,'0')}.${val.getFullYear()}`;
     if (typeof val === 'number' && val > 40000) {
-        const dateObj = XLSX.SSF.parse_date_code(val);
-        return `${String(dateObj.d).padStart(2, '0')}.${String(dateObj.m).padStart(2, '0')}.${dateObj.y}`;
+        const d = XLSX.SSF.parse_date_code(val);
+        return `${String(d.d).padStart(2,'0')}.${String(d.m).padStart(2,'0')}.${d.y}`;
     }
     return val;
 }
 
-function formatDateObject(date) {
-    return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
-}
-
+// 3. BYGG TABELL
 function renderTable(data) {
     const tableBody = document.getElementById('tableBody');
     tableBody.innerHTML = ""; 
-    let lastMonthName = ""; 
-    let colorIndex = 0;
+    let lastMnd = ""; 
+    let colorIdx = 0;
 
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
-        if (!row || row.length === 0) continue;
-        
-        const mnd = (row[0] || "").toString().trim();
-        const akt = (row[1] || "").toString().trim();
-        
-        // Hopper over tomme rader
-        if (mnd === "" && akt === "") continue;
+        if (!row[0] && !row[1]) continue; // Hopper over tomme
 
-        const dat = formatExcelDate(row[2]);
-        const del = (row[3] || "").toString().trim();
-        const ans = (row[4] || "").toString().trim();
-
-        if (mnd !== "" && mnd.toLowerCase() !== lastMonthName.toLowerCase()) {
-            colorIndex = (colorIndex + 1) % 6;
-            lastMonthName = mnd;
+        if (row[0] && row[0] !== lastMnd) {
+            colorIdx = (colorIdx + 1) % 6;
+            lastMnd = row[0];
         }
 
         const tr = document.createElement('tr');
-        tr.className = `month-color-${colorIndex}`;
-        tr.innerHTML = `<td>${mnd}</td><td>${akt}</td><td>${dat}</td><td>${del}</td><td>${ans}</td>`;
+        tr.className = `month-color-${colorIdx}`;
+        tr.innerHTML = `
+            <td>${row[0] || ""}</td>
+            <td>${row[1] || ""}</td>
+            <td>${formatExcelDate(row[2])}</td>
+            <td>${row[3] || ""}</td>
+            <td>${row[4] || ""}</td>
+        `;
         tableBody.appendChild(tr);
     }
-    document.getElementById('aktivitetsTabell').style.display = 'table';
 }
 
-// FILTERFUNKSJONEN SOM MANGLER
+// 4. FILTER-LOGIKK (Forbedret)
 function filterTable() {
     const search = document.getElementById("searchInput").value.toUpperCase();
-    const dTrinn = document.getElementById("deltakerFilter").value;
-    const aVal = document.getElementById("ansvarFilter").value;
+    const dFilter = document.getElementById("deltakerFilter").value;
+    const aFilter = document.getElementById("ansvarFilter").value;
     const rows = document.querySelectorAll("#tableBody tr");
 
     rows.forEach(row => {
         const cells = row.getElementsByTagName("td");
-        if (cells.length < 5) return;
-        
         const dText = cells[3].textContent.toUpperCase();
         const aText = cells[4].textContent.toUpperCase();
-        const fullText = row.textContent.toUpperCase();
+        const allText = row.textContent.toUpperCase();
 
-        // Logikk for Deltakelse (inkl. Heståsen/Brattbakken kobling)
-        let mD = (dTrinn === "");
-        if (!mD) {
-            const erH = ["1.", "2.", "3."].includes(dTrinn);
-            const erB = ["4.", "5.", "6.", "7."].includes(dTrinn);
-            mD = dText.includes(dTrinn) || dText.includes("ALLE TRINN") || (erH && dText.includes("HESTÅSEN")) || (erB && dText.includes("BRATTBAKKEN"));
+        // Deltaker-sjekk
+        let matchD = (dFilter === "");
+        if (!matchD) {
+            const isH = ["1.", "2.", "3."].includes(dFilter);
+            const isB = ["4.", "5.", "6.", "7."].includes(dFilter);
+            matchD = dText.includes(dFilter) || dText.includes("ALLE TRINN") || 
+                     (isH && dText.includes("HESTÅSEN")) || (isB && dText.includes("BRATTBAKKEN"));
         }
 
-        // Logikk for Ansvar
-        let mA = (aVal === "");
-        if (!mA) {
-            const erH = ["1.", "2.", "3."].includes(aVal);
-            const erB = ["4.", "5.", "6.", "7."].includes(aVal);
-            if (["FAU", "KIRKA", "ELEVRÅDET"].includes(aVal)) {
-                mA = aText.includes(aVal);
+        // Ansvar-sjekk
+        let matchA = (aFilter === "");
+        if (!matchA) {
+            const isH = ["1.", "2.", "3."].includes(aFilter);
+            const isB = ["4.", "5.", "6.", "7."].includes(aFilter);
+            if (["FAU", "KIRKA", "ELEVRÅDET"].includes(aFilter)) {
+                matchA = aText.includes(aFilter);
             } else {
-                mA = aText.includes(aVal) || aText.includes("ALLE TRINN") || (erH && aText.includes("HESTÅSEN")) || (erB && aText.includes("BRATTBAKKEN"));
+                matchA = aText.includes(aFilter) || aText.includes("ALLE TRINN") || 
+                         (isH && aText.includes("HESTÅSEN")) || (isB && aText.includes("BRATTBAKKEN"));
             }
         }
 
-        const mSearch = fullText.includes(search);
-        row.style.display = (mD && mA && mSearch) ? "" : "none";
+        const matchS = allText.includes(search);
+        row.style.display = (matchD && matchA && matchS) ? "" : "none";
     });
 }
 
-function resetFilters() {
-    document.getElementById("searchInput").value = "";
-    document.getElementById("deltakerFilter").value = "";
-    document.getElementById("ansvarFilter").value = "";
-    filterTable();
-}
+// 5. OPPSTART OG EVENT LISTENERS
+window.onload = () => {
+    fetchData();
 
-window.onload = fetchData;
+    // Legger til lyttere manuelt for å være helt sikker
+    document.getElementById("searchInput").addEventListener("keyup", filterTable);
+    document.getElementById("deltakerFilter").addEventListener("change", filterTable);
+    document.getElementById("ansvarFilter").addEventListener("change", filterTable);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("deltakerFilter").value = "";
+        document.getElementById("ansvarFilter").value = "";
+        filterTable();
+    });
+};
 </script>
 </body>
 </html>
