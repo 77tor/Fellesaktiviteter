@@ -203,23 +203,22 @@ function byggFilterMeny(id, set) {
 
 function filterTable() {
     const search = document.getElementById("searchInput").value.toUpperCase();
-    const dVal = document.getElementById("deltakerFilter").value; // Alltid uppercase fra menyen
+    const dVal = document.getElementById("deltakerFilter").value; // Alltid uppercase
     const aVal = document.getElementById("ansvarFilter").value;
     const rows = document.querySelectorAll("#tableBody tr");
     let synligeRader = 0;
 
     rows.forEach(row => {
-        const dText = row.getAttribute('data-deltakere');
-        const aText = row.getAttribute('data-ansvar');
+        const dText = row.getAttribute('data-deltakere') || "";
+        const aText = row.getAttribute('data-ansvar') || "";
         const fullText = row.textContent.toUpperCase();
 
         // Sjekk deltakelse 
         let mD = (dVal === "");
         if (!mD) {
-            // Sjekker om det valgte filteret matcher raden direkte, eller er "ALLE"
-            const direkteTreff = dText.includes(dVal) || dText.includes("ALLE") || dText.includes("ALLE TRINN");
+            const direkteTreff = dText.includes(dVal) || dText.includes("ALLE");
             
-            // Sjekker om raden gjelder en sone, og om det valgte trinnet tilhører den sonen
+            // Sjekker om raden gjelder en sone, og om valgt filter er et trinn i den sonen
             const hSone = dText.includes("HESTÅSEN") && (dVal.includes("1") || dVal.includes("2") || dVal.includes("3"));
             const bSone = dText.includes("BRATTBAKKEN") && (dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7"));
             
@@ -243,7 +242,7 @@ function filterTable() {
         }
     });
 
-    // Vis beskjed om tabellen blir helt tom
+    // Vis/skjul tabell eller feilmelding basert på treff
     document.getElementById("noResults").style.display = synligeRader === 0 ? "block" : "none";
     document.getElementById("aktivitetsTabell").style.display = synligeRader === 0 ? "none" : "table";
 }
