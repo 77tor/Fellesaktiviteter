@@ -147,7 +147,6 @@ function renderTable(csvText) {
     lines.forEach((line, index) => {
         if (index === 0 || !line.trim()) return;
         
-        // Bruker den nye robuste split-funksjonen
         const parts = parseCSVLine(line);
         if (parts.length < 3) return;
 
@@ -187,14 +186,12 @@ function renderTable(csvText) {
 
 function byggFilterMeny(id, set) {
     const select = document.getElementById(id);
-    const arkivertValg = select.value; // Tar vare på valget om koden oppdaterer i bakgrunnen
+    const arkivertValg = select.value; 
     
-    // Nullstill bortsett fra første valg ("Vis alle")
     select.innerHTML = '<option value="">Vis alle</option>';
     
-    // Sorterer listen alfabetisk/numerisk
     Array.from(set).sort().forEach(verdi => {
-        if(!verdi || verdi.toUpperCase() === "ALLE TRINN") return; // Hopper over unødvendige universelle valg
+        if(!verdi || verdi.toUpperCase() === "ALLE TRINN") return; 
         const opt = document.createElement('option');
         opt.value = verdi.toUpperCase();
         opt.textContent = verdi;
@@ -206,7 +203,7 @@ function byggFilterMeny(id, set) {
 
 function filterTable() {
     const search = document.getElementById("searchInput").value.toUpperCase();
-    const dVal = document.getElementById("deltakerFilter").value;
+    const dVal = document.getElementById("deltakerFilter").value; // Alltid uppercase fra menyen
     const aVal = document.getElementById("ansvarFilter").value;
     const rows = document.querySelectorAll("#tableBody tr");
     let synligeRader = 0;
@@ -216,14 +213,17 @@ function filterTable() {
         const aText = row.getAttribute('data-ansvar');
         const fullText = row.textContent.toUpperCase();
 
-        // Sjekk deltakelse (Inkluderer logikk for "Alle trinn" og lokasjoner)
+        // Sjekk deltakelse 
         let mD = (dVal === "");
         if (!mD) {
-            const erHestasen = ["1.", "2.", "3.", "1", "2", "3"].substringMatches?.(dVal) || dVal.includes("1") || dVal.includes("2") || dVal.includes("3"); 
-            // Enklere sjekk: Inneholder raden det spesifikke trinnet, eller "ALLE", eller sonen de tilhører?
-            mD = dText.includes(dVal) || dText.includes("ALLE") ||
-                 (dText.includes("HESTÅSEN") && ["1.", "2.", "3."].some(t => dVal.includes(t))) ||
-                 (dText.includes("BRATTBAKKEN") && ["4.", "5.", "6.", "7."].some(t => dVal.includes(t)));
+            // Sjekker om det valgte filteret matcher raden direkte, eller er "ALLE"
+            const direkteTreff = dText.includes(dVal) || dText.includes("ALLE") || dText.includes("ALLE TRINN");
+            
+            // Sjekker om raden gjelder en sone, og om det valgte trinnet tilhører den sonen
+            const hSone = dText.includes("HESTÅSEN") && (dVal.includes("1") || dVal.includes("2") || dVal.includes("3"));
+            const bSone = dText.includes("BRATTBAKKEN") && (dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7"));
+            
+            mD = direkteTreff || hSone || bSone;
         }
 
         // Sjekk ansvar
