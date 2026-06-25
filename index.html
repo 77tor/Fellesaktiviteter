@@ -79,10 +79,8 @@
 </div>
 
 <script>
-// Korrekt CSV-lenke som gir rådata direkte til JavaScript
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSBt4leeUPe4YsOM7rjGDaT7Eq322BVnExQvVIxhMeFqcATE7kqoYWay7k7lRH1cULOen7rEF6d6pSY/pub?output=csv';
 
-// Setter skoleår automatisk basert på dagens dato
 function oppdaterSkolear() {
     const na = new Date();
     const aar = na.getFullYear();
@@ -90,15 +88,26 @@ function oppdaterSkolear() {
     document.getElementById('skolearVisning').textContent = `Skoleåret ${skolear}`;
 }
 
-// Robust CSV-splitter som takler komma inni hermetegn ""
+// Oppdatert for å takle BÅDE norsk semikolon (;) og vanlig komma (,)
 function parseCSVLine(text) {
-    const r = /([^\s,",]+|"[^"]*")/g;
-    const a = [];
-    let m;
-    while (m = r.exec(text)) {
-        a.push(m[1].replace(/^"|"$/g, '').trim());
+    let separator = text.includes(';') ? ';' : ',';
+    const fields = [];
+    let field = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        if (c === '"') {
+            inQuotes = !inQuotes;
+        } else if (c === separator && !inQuotes) {
+            fields.push(field.trim());
+            field = '';
+        } else {
+            field += c;
+        }
     }
-    return a;
+    fields.push(field.trim());
+    return fields.map(f => f.replace(/^"|"$/g, '').trim());
 }
 
 async function fetchData() {
@@ -118,7 +127,7 @@ async function fetchData() {
         if (!response.ok) throw new Error("Nettverksfeil");
         const data = await response.text();
         
-        if (data.includes("Mnd") || data.length > 100) {
+        if (data.length > 50) {
             const nå = new Date();
             const datoStreng = nå.toLocaleDateString('no-NO') + " kl. " + nå.toLocaleTimeString('no-NO', {hour: '2-digit', minute:'2-digit'});
             localStorage.setItem('skoleplanCache', data);
@@ -130,7 +139,7 @@ async function fetchData() {
     } catch (err) {
         console.error("Henting feilet:", err);
         if (cachedData) {
-            updateDisplay.innerHTML = "Kunne ikke hente nye data. Viser lagret versjon fra " + cachedTime;
+            updateDisplay.innerHTML = "Kunne ikke hente nye data fra Google. Viser lagret versjon fra " + cachedTime;
         }
     }
 }
@@ -211,25 +220,20 @@ function filterTable() {
         const aText = row.getAttribute('data-ansvar') || "";
         const fullText = row.textContent.toUpperCase();
 
-        // Sjekk deltakelse 
         let mD = (dVal === "");
         if (!mD) {
             const direkteTreff = dText.includes(dVal) || dText.includes("ALLE");
-            
-            // Sjekker soner (Heståsen = trinn 1-3, Brattbakken = trinn 4-7)
             const hSone = dText.includes("HESTÅSEN") && (dVal.includes("1") || dVal.includes("2") || dVal.includes("3"));
             const bSone = dText.includes("BRATTBAKKEN") && (dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7"));
             
             mD = direkteTreff || hSone || bSone;
         }
 
-        // Sjekk ansvar
         let mA = (aVal === "");
         if (!mA) {
             mA = aText.includes(aVal) || aText.includes("ALLE");
         }
 
-        // Sjekk søkefelt
         const mSearch = fullText.includes(search);
 
         if (mD && mA && mSearch) {
@@ -240,7 +244,6 @@ function filterTable() {
         }
     });
 
-    // Vis/skjul tabell eller feilmelding basert på om det er treff
     document.getElementById("noResults").style.display = synligeRader === 0 ? "block" : "none";
     document.getElementById("aktivitetsTabell").style.display = synligeRader === 0 ? "none" : "table";
 }
