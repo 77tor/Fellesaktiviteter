@@ -229,6 +229,11 @@ const FASTE_ANSVAR = [
     "Elevrådet", "FAU", "Kirka", "Alle trinn"
 ];
 
+const MANED_NAVN = [
+    "Januar", "Februar", "Mars", "April", "Mai", "Juni", 
+    "Juli", "August", "September", "Oktober", "November", "Desember"
+];
+
 let parsedEvents = [];
 let currentCalDate = new Date();
 
@@ -324,7 +329,7 @@ function renderData(csv){
     
     // Vis aktiviteter for dagens dato som standard
     const today = new Date();
-    showEventsForDate(today.getDate(), today.getMonth() + 1);
+    showEventsForDate(today.getDate(), today.getMonth());
 }
 
 function byggFasteFilter(id, liste, standardTekst){
@@ -348,8 +353,7 @@ function renderCalendar(){
     const year = currentCalDate.getFullYear();
     const month = currentCalDate.getMonth();
 
-    const monthNames = ["Januar", "Februar", "Mars", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Desember"];
-    document.getElementById("calMonthYear").textContent = `${monthNames[month]} ${year}`;
+    document.getElementById("calMonthYear").textContent = `${MANED_NAVN[month]} ${year}`;
 
     const dayNames = ["M", "T", "O", "T", "F", "L", "S"];
     dayNames.forEach(d => {
@@ -376,14 +380,14 @@ function renderCalendar(){
         el.className = "cal-day";
         el.textContent = day;
 
-        const eventsOnDay = getEventsForDate(day, month + 1);
+        const eventsOnDay = getEventsForDate(day, month);
         if(eventsOnDay.length > 0) el.classList.add("has-event");
         if(day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) el.classList.add("today");
 
         el.onclick = () => {
             document.querySelectorAll(".cal-day").forEach(c => c.classList.remove("selected"));
             el.classList.add("selected");
-            showEventsForDate(day, month + 1);
+            showEventsForDate(day, month);
         };
 
         grid.appendChild(el);
@@ -395,30 +399,50 @@ function changeMonth(delta){
     renderCalendar();
 }
 
-/* Hjelpefunksjon for å finne rader basert på dato */
-function getEventsForDate(day, month){
-    let dayStr = day < 10 ? "0" + day : "" + day;
-    let monthStr = month < 10 ? "0" + month : "" + month;
-    let match1 = `${dayStr}.${monthStr}`;
-    let match2 = `${day}.${month}.`;
+/* Hjelpefunksjon for å finne rader basert på dato OG måned */
+function getEventsForDate(day, monthIdx){
+    const valgtManedNavn = MANED_NAVN[monthIdx].toLowerCase();
+    
+    let dayPadded = day < 10 ? "0" + day : "" + day;
+    let monthPadded = (monthIdx + 1) < 10 ? "0" + (monthIdx + 1) : "" + (monthIdx + 1);
+    
+    // Format som sjekkes i Dato-feltet (f.eks "05.08", "5.8", "5.")
+    let matchNumeric1 = `${dayPadded}.${monthPadded}`;
+    let matchNumeric2 = `${day}.${monthIdx + 1}.`;
 
-    return parsedEvents.filter(e => 
-        e.dato.includes(match1) || 
-        e.dato.includes(match2) || 
-        e.dato.startsWith(day + ".")
-    );
+    return parsedEvents.filter(e => {
+        let mndText = (e.mnd || "").toLowerCase();
+        let datoText = (e.dato || "");
+
+        // Sjekk 1: Om mnd-feltet matcher den viste måneden
+        let matchManed = mndText.includes(valgtManedNavn);
+
+        // Sjekk 2: Sjekk om datoen inneholder enten tall/måned eller siffer med punktum
+        let matchDag = datoText.includes(matchNumeric1) || 
+                       datoText.includes(matchNumeric2) || 
+                       datoText.startsWith(day + ".") || 
+                       datoText.startsWith(dayPadded + ".");
+
+        // Hvis måneden matcher i teksten OG dagen matcher i dato-feltet
+        if (matchManed && matchDag) return true;
+
+        // Dersom dato-feltet er formatert direkte med DD.MM (f.eks "15.08"), sjekk det UAHENGIG av teksten
+        if (datoText.includes(matchNumeric1) || datoText.includes(matchNumeric2)) return true;
+
+        return false;
+    });
 }
 
 /* Oppdaterer Rute 2: Aktivitet på valgt dag */
-function showEventsForDate(day, month){
+function showEventsForDate(day, monthIdx){
     const header = document.getElementById("selectedDateHeader");
     const list = document.getElementById("selectedDateList");
     
     let dayStr = day < 10 ? "0" + day : "" + day;
-    let monthStr = month < 10 ? "0" + month : "" + month;
+    let monthStr = (monthIdx + 1) < 10 ? "0" + (monthIdx + 1) : "" + (monthIdx + 1);
     header.textContent = `Aktivitet ${dayStr}.${monthStr}`;
 
-    const events = getEventsForDate(day, month);
+    const events = getEventsForDate(day, monthIdx);
     list.innerHTML = "";
 
     if(events.length === 0){
