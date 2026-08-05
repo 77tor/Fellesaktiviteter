@@ -83,6 +83,7 @@ h1 { text-align:center; margin-bottom: 5px; }
     cursor: pointer;
     position: relative;
     user-select: none;
+    box-sizing: border-box;
 }
 .cal-day:hover { background: #e2e8f0; }
 .cal-day.empty { cursor: default; }
@@ -90,12 +91,29 @@ h1 { text-align:center; margin-bottom: 5px; }
 .cal-day.today { font-weight: bold; border: 1px solid #2c3e50; }
 
 /* Fargekoder for hendelser */
-.cal-day.has-event { background: #3b82f6; color: white; font-weight: bold; }
+/* 1. Enkeltdagsaktiviteter: Fylt blå boble */
+.cal-day.has-event { 
+    background: #3b82f6; 
+    color: white; 
+    font-weight: bold; 
+}
 .cal-day.has-event:hover { background: #2563eb; }
-.cal-day.has-week-event { background: #8b5cf6; color: white; } /* Lilla for ukeaktivitet */
-.cal-day.has-week-event:hover { background: #7c3aed; }
-.cal-day.has-both { background: #2563eb; color: white; border: 2px solid #8b5cf6; box-sizing: border-box; }
 
+/* 2. Ukeaktiviteter: Grønn strek under datoen */
+.cal-day.has-week-event { 
+    border-bottom: 3px solid #10b981; 
+    border-radius: 4px; 
+}
+
+/* 3. Både dag- og ukeaktivitet: Blå boble MED grønn understrek */
+.cal-day.has-both { 
+    background: #3b82f6; 
+    color: white; 
+    font-weight: bold; 
+    border-bottom: 3px solid #10b981; 
+}
+
+/* Ukenummersøyle til venstre */
 .cal-week-num {
     font-size: 10px;
     color: #94a3b8;
@@ -106,7 +124,7 @@ h1 { text-align:center; margin-bottom: 5px; }
     border-radius: 3px;
 }
 .cal-week-num:hover { background: #f1f5f9; color: #334155; }
-.cal-week-num.has-week-event { font-weight: bold; color: #7c3aed; background: #ede9fe; }
+.cal-week-num.has-week-event { font-weight: bold; color: #059669; background: #ecfdf5; }
 
 .cal-day.selected { outline: 2px solid #000; font-weight: bold; }
 
@@ -127,17 +145,17 @@ h1 { text-align:center; margin-bottom: 5px; }
 .dash-item .event-title { font-weight: bold; color: #1e293b; display: block; }
 .dash-item .event-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
 
-/* Styling for uke-aktiviteter i visningsrute 2 */
+/* Styling for uke-aktiviteter i visningsrute 2 (Grønn stil) */
 .dash-item.week-badge {
-    background: #f5f3ff;
-    border-left: 3px solid #8b5cf6;
+    background: #ecfdf5;
+    border-left: 3px solid #10b981;
     padding-left: 6px;
     margin-bottom: 6px;
     border-radius: 0 4px 4px 0;
 }
 .week-tag {
     display: inline-block;
-    background: #8b5cf6;
+    background: #10b981;
     color: white;
     font-size: 9px;
     font-weight: bold;
@@ -440,11 +458,9 @@ function renderCalendar(){
 
     // Kalenderrader
     while(currentDay <= daysInMonth) {
-        // Beregn ukenummer for mandagen i den aktuelle uken
         let referenceDate = new Date(year, month, currentDay);
         let weekNum = getISOWeek(referenceDate);
 
-        // Sjekk om uken har noen uke-aktiviteter
         let weekEvents = getWeekEvents(weekNum, month);
 
         // Uke-kolonne
@@ -475,6 +491,7 @@ function renderCalendar(){
                 const hasSingle = singleEvents.length > 0;
                 const hasWeek = weekEventsForDay.length > 0;
 
+                // Påfør riktig fargekoding
                 if(hasSingle && hasWeek) dayEl.classList.add("has-both");
                 else if(hasSingle) dayEl.classList.add("has-event");
                 else if(hasWeek) dayEl.classList.add("has-week-event");
@@ -513,7 +530,6 @@ function getSingleEventsForDate(day, monthIdx){
     let matchNumeric2 = `${day}.${monthIdx + 1}.`;
 
     return parsedEvents.filter(e => {
-        // Hopp over rene uke-aktiviteter
         if(e.weekNums.length > 0 && !e.dato.includes(".")) return false;
 
         let mndText = (e.mnd || "").toLowerCase();
@@ -565,7 +581,7 @@ function showEventsForDate(day, monthIdx){
         return;
     }
 
-    // Vis ukeaktiviteter øverst med lilla fremheving
+    // Vis ukeaktiviteter øverst med grønn merking
     weekEvents.forEach(e => {
         const li = document.createElement("li");
         li.className = "dash-item week-badge";
