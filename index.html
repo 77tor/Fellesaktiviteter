@@ -13,11 +13,27 @@ h1 { text-align:center; }
 .controls {
     display:grid;
     grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-    gap:10px;
+    gap:15px;
     margin-bottom:20px;
+    align-items: end;
 }
 
-input, select, button { padding:8px; }
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #7f8c8d;
+    text-transform: uppercase;
+}
+
+input, select, button { padding:8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; width: 100%; box-sizing: border-box; }
+button { background: #95a5a6; color: white; cursor: pointer; border: none; font-weight: bold; padding: 10px; }
+button:hover { background: #7f8c8d; }
 
 table { width:100%; border-collapse: collapse; display:none; }
 th, td { padding:10px; border-bottom:1px solid #ddd; }
@@ -40,20 +56,31 @@ th { background:#2c3e50; color:white; }
 <div class="container">
 
 <h1>Fellesaktiviteter</h1>
-<div id="skolearVisning"></div>
+<div id="skolearVisning" style="text-align:center; color:#7f8c8d; font-weight:bold; margin-bottom:15px;"></div>
 
 <div class="controls">
-<input id="searchInput" onkeyup="filterTable()" placeholder="Søk">
+<div class="filter-group">
+    <label for="searchInput">Søk</label>
+    <input id="searchInput" onkeyup="filterTable()" placeholder="Søk i planen...">
+</div>
 
-<select id="deltakerFilter" onchange="filterTable()">
-<option value="">Alle deltakere</option>
-</select>
+<div class="filter-group">
+    <label for="deltakerFilter">Deltakelse</label>
+    <select id="deltakerFilter" onchange="filterTable()">
+        <option value="">Alle deltakere</option>
+    </select>
+</div>
 
-<select id="ansvarFilter" onchange="filterTable()">
-<option value="">Alle ansvar</option>
-</select>
+<div class="filter-group">
+    <label for="ansvarFilter">Ansvar</label>
+    <select id="ansvarFilter" onchange="filterTable()">
+        <option value="">Alle ansvar</option>
+    </select>
+</div>
 
-<button onclick="resetFilters()">Nullstill</button>
+<div class="filter-group">
+    <button onclick="resetFilters()">Nullstill</button>
+</div>
 </div>
 
 <div id="loader" class="status-msg">Laster data...</div>
@@ -200,7 +227,7 @@ function byggFilter(id,set){
     const sel=document.getElementById(id);
     let current=sel.value;
 
-    sel.innerHTML='<option value="">Alle</option>';
+    sel.innerHTML='<option value="">Alle deltakere</option>';
 
     [...set].sort().forEach(v=>{
         if(!v) return;
@@ -214,28 +241,53 @@ function byggFilter(id,set){
 }
 
 function filterTable(){
-    let search=document.getElementById("searchInput").value.toUpperCase();
-    let dVal=document.getElementById("deltakerFilter").value;
-    let aVal=document.getElementById("ansvarFilter").value;
+    let search = document.getElementById("searchInput").value.toUpperCase();
+    let dVal = document.getElementById("deltakerFilter").value;
+    let aVal = document.getElementById("ansvarFilter").value;
 
-    let rows=document.querySelectorAll("#tableBody tr");
-    let visible=0;
+    let rows = document.querySelectorAll("#tableBody tr");
+    let visible = 0;
 
-    rows.forEach(r=>{
-        let d=r.getAttribute("data-deltakere")||"";
-        let a=r.getAttribute("data-ansvar")||"";
-        let t=r.textContent.toUpperCase();
+    rows.forEach(r => {
+        let d = r.getAttribute("data-deltakere") || "";
+        let a = r.getAttribute("data-ansvar") || "";
+        let t = r.textContent.toUpperCase();
 
-        let ok=
-            (dVal===""||d.includes(dVal)) &&
-            (aVal===""||a.includes(aVal)) &&
-            t.includes(search);
+        // --- Deltaker-logikk for samlebegrep ---
+        let matchDeltaker = (dVal === "");
 
-        r.style.display=ok?"":"none";
-        if(ok) visible++;
+        if (!matchDeltaker) {
+            // 1. Sjekk om teksten matcher direkte
+            let direkteMatch = d.includes(dVal);
+
+            // 2. Er raden merket med "ALLE" (gjelder alle trinn 1-7)
+            let gjelderAlle = d.includes("ALLE");
+
+            // 3. Sjekk om det er Heståsen (1.-3. trinn)
+            let erHestasenSone = (dVal.includes("1") || dVal.includes("2") || dVal.includes("3") || dVal.includes("HESTÅSEN")) && d.includes("HESTÅSEN");
+
+            // 4. Sjekk om det er Brattbakken (4.-7. trinn)
+            let erBrattbakkenSone = (dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7") || dVal.includes("BRATTBAKKEN")) && d.includes("BRATTBAKKEN");
+
+            matchDeltaker = direkteMatch || gjelderAlle || erHestasenSone || erBrattbakkenSone;
+        }
+
+        // --- Ansvar-logikk ---
+        let matchAnsvar = (aVal === "");
+        if (!matchAnsvar) {
+            matchAnsvar = a.includes(aVal) || a.includes("ALLE");
+        }
+
+        // --- Søkefelt ---
+        let matchSok = t.includes(search);
+
+        let ok = matchDeltaker && matchAnsvar && matchSok;
+
+        r.style.display = ok ? "" : "none";
+        if (ok) visible++;
     });
 
-    document.getElementById("noResults").style.display=visible===0?"block":"none";
+    document.getElementById("noResults").style.display = visible === 0 ? "block" : "none";
 }
 
 function resetFilters(){
