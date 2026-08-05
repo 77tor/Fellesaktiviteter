@@ -10,38 +10,54 @@ body { font-family: Arial, sans-serif; background:#f8f9fa; margin:20px;}
 .container { max-width:1100px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
 h1 { text-align:center; margin-bottom: 5px; }
 
-/* Dashboard / Øvre seksjon */
+/* Dashboard / 3-delt øvre seksjon */
 .dashboard {
     display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
     margin-bottom: 25px;
     background: #f1f5f9;
     padding: 15px;
     border-radius: 8px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .dashboard { grid-template-columns: 1fr; }
 }
 
-/* Mini Kalender Styling */
-.calendar-card {
+/* Felles styling for kortene i dashboardet */
+.dash-card {
     background: white;
     padding: 12px;
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: 220px;
+    box-sizing: border-box;
 }
+
+.dash-card h3 { 
+    margin: 0 0 10px 0; 
+    font-size: 13px; 
+    color: #334155; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 5px;
+}
+
+/* Mini Kalender Styling */
 .calendar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 10px;
+    font-size: 13px;
+    margin-bottom: 8px;
 }
 .calendar-header button {
-    padding: 2px 8px;
+    padding: 1px 6px;
     font-size: 12px;
     background: #e2e8f0;
     color: #333;
@@ -54,13 +70,13 @@ h1 { text-align:center; margin-bottom: 5px; }
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
+    gap: 2px;
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
 }
-.cal-day-name { font-weight: bold; color: #64748b; padding-bottom: 4px; font-size: 11px; }
+.cal-day-name { font-weight: bold; color: #64748b; padding-bottom: 2px; font-size: 10px; }
 .cal-day {
-    padding: 6px 0;
+    padding: 4px 0;
     border-radius: 50%;
     cursor: pointer;
     position: relative;
@@ -72,29 +88,26 @@ h1 { text-align:center; margin-bottom: 5px; }
 .cal-day.today { font-weight: bold; border: 1px solid #2c3e50; }
 .cal-day.has-event { background: #3b82f6; color: white; font-weight: bold; }
 .cal-day.has-event:hover { background: #2563eb; }
-.cal-day.selected { outline: 2px solid #000; }
+.cal-day.selected { outline: 2px solid #000; font-weight: bold; }
 
-/* Nærmeste aktiviteter widget */
-.upcoming-card {
-    background: white;
-    padding: 12px;
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
+/* Lister for kort 2 og 3 */
+.dash-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    overflow-y: auto; 
+    flex-grow: 1; 
 }
-.upcoming-card h3 { margin: 0 0 10px 0; font-size: 14px; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; }
-.upcoming-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 160px; }
-.upcoming-item {
-    display: flex;
-    justify-content: space-between;
+.dash-item {
     padding: 6px 0;
     border-bottom: 1px solid #f1f5f9;
-    font-size: 13px;
+    font-size: 12px;
 }
-.upcoming-item:last-child { border-bottom: none; }
-.upcoming-date { font-weight: bold; color: #2563eb; white-space: nowrap; margin-right: 10px; }
-.upcoming-title { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.dash-item:last-child { border-bottom: none; }
+.dash-item .event-title { font-weight: bold; color: #1e293b; display: block; }
+.dash-item .event-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+.upcoming-item { display: flex; justify-content: space-between; align-items: center; }
+.upcoming-date { font-weight: bold; color: #2563eb; white-space: nowrap; margin-right: 8px; }
 
 /* Filter Kontroller */
 .controls {
@@ -134,9 +147,10 @@ th { background:#2c3e50; color:white; text-align: left; }
 <h1>Fellesaktiviteter</h1>
 <div id="skolearVisning" style="text-align:center; color:#7f8c8d; font-weight:bold; margin-bottom:15px;"></div>
 
-<!-- Visual Dashboard: Kalender og Nærmeste hendelser -->
+<!-- 3-delt Dashboard -->
 <div class="dashboard">
-    <div class="calendar-card">
+    <!-- 1. Kalender -->
+    <div class="dash-card">
         <div class="calendar-header">
             <button onclick="changeMonth(-1)">&lt;</button>
             <span id="calMonthYear"></span>
@@ -145,10 +159,19 @@ th { background:#2c3e50; color:white; text-align: left; }
         <div class="calendar-grid" id="calendarGrid"></div>
     </div>
     
-    <div class="upcoming-card">
+    <!-- 2. Aktivitet(er) for valgt dag -->
+    <div class="dash-card">
+        <h3 id="selectedDateHeader">Aktivitet valgt dag</h3>
+        <ul class="dash-list" id="selectedDateList">
+            <li class="dash-item" style="color:#64748b;">Klikk på en dato i kalenderen...</li>
+        </ul>
+    </div>
+
+    <!-- 3. Nærmeste aktiviteter -->
+    <div class="dash-card">
         <h3>Nærmeste aktiviteter</h3>
-        <ul class="upcoming-list" id="upcomingList">
-            <li class="upcoming-item"><span class="upcoming-title">Laster aktiviteter...</span></li>
+        <ul class="dash-list" id="upcomingList">
+            <li class="dash-item"><span class="event-meta">Laster aktiviteter...</span></li>
         </ul>
     </div>
 </div>
@@ -175,7 +198,7 @@ th { background:#2c3e50; color:white; text-align: left; }
     </div>
 
     <div class="filter-group">
-        <button class="reset-btn" onclick="resetFilters()">Nullstill alt</button>
+        <button class="reset-btn" onclick="resetFilters()">Nullstill</button>
     </div>
 </div>
 
@@ -208,7 +231,6 @@ const FASTE_ANSVAR = [
 
 let parsedEvents = [];
 let currentCalDate = new Date();
-let selectedCalDateStr = "";
 
 function oppdaterSkolear(){
     const d = new Date();
@@ -276,14 +298,12 @@ function renderData(csv){
             monthPrev = mnd;
         }
 
-        // Lagre hendelse
-        parsedEvents.push({ mnd, aktivitet, dato, deltakere, ansvar, raw: line });
+        parsedEvents.push({ mnd, aktivitet, dato, deltakere, ansvar });
 
         let tr = document.createElement("tr");
         tr.className = "month-color-" + colorIndex;
         tr.setAttribute("data-deltakere", deltakere.toUpperCase());
         tr.setAttribute("data-ansvar", ansvar.toUpperCase());
-        tr.setAttribute("data-dato", dato);
 
         tr.innerHTML = `
         <td>${mnd}</td>
@@ -301,6 +321,10 @@ function renderData(csv){
 
     renderCalendar();
     renderUpcoming();
+    
+    // Vis aktiviteter for dagens dato som standard
+    const today = new Date();
+    showEventsForDate(today.getDate(), today.getMonth() + 1);
 }
 
 function byggFasteFilter(id, liste, standardTekst){
@@ -336,7 +360,6 @@ function renderCalendar(){
     });
 
     const firstDayIndex = new Date(year, month, 1).getDay();
-    // Tilpass til mandag som startdag (0 = søndag i JS)
     const paddingDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -353,23 +376,14 @@ function renderCalendar(){
         el.className = "cal-day";
         el.textContent = day;
 
-        // Formater dato for å sjekke mot CSV-data (f.eks "15.09" eller "15.9")
-        let dayStr = day < 10 ? "0" + day : "" + day;
-        let monthStr = (month + 1) < 10 ? "0" + (month + 1) : "" + (month + 1);
-        let matchStr1 = `${dayStr}.${monthStr}`;
-        let matchStr2 = `${day}.${month + 1}.`;
-
-        const hasEvent = parsedEvents.some(e => e.dato.includes(matchStr1) || e.dato.includes(matchStr2) || e.dato.startsWith(day + "."));
-
-        if(hasEvent) el.classList.add("has-event");
+        const eventsOnDay = getEventsForDate(day, month + 1);
+        if(eventsOnDay.length > 0) el.classList.add("has-event");
         if(day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) el.classList.add("today");
 
         el.onclick = () => {
             document.querySelectorAll(".cal-day").forEach(c => c.classList.remove("selected"));
             el.classList.add("selected");
-            // Søk automatisk på datoen når man klikker på dagen
-            document.getElementById("searchInput").value = `${day}.`;
-            filterTable();
+            showEventsForDate(day, month + 1);
         };
 
         grid.appendChild(el);
@@ -381,30 +395,75 @@ function changeMonth(delta){
     renderCalendar();
 }
 
-/* Nærmeste aktiviteter Widget */
-function renderUpcoming(){
-    const list = document.getElementById("upcomingList");
+/* Hjelpefunksjon for å finne rader basert på dato */
+function getEventsForDate(day, month){
+    let dayStr = day < 10 ? "0" + day : "" + day;
+    let monthStr = month < 10 ? "0" + month : "" + month;
+    let match1 = `${dayStr}.${monthStr}`;
+    let match2 = `${day}.${month}.`;
+
+    return parsedEvents.filter(e => 
+        e.dato.includes(match1) || 
+        e.dato.includes(match2) || 
+        e.dato.startsWith(day + ".")
+    );
+}
+
+/* Oppdaterer Rute 2: Aktivitet på valgt dag */
+function showEventsForDate(day, month){
+    const header = document.getElementById("selectedDateHeader");
+    const list = document.getElementById("selectedDateList");
+    
+    let dayStr = day < 10 ? "0" + day : "" + day;
+    let monthStr = month < 10 ? "0" + month : "" + month;
+    header.textContent = `Aktivitet ${dayStr}.${monthStr}`;
+
+    const events = getEventsForDate(day, month);
     list.innerHTML = "";
 
-    // Viser de 5 første hendelsene fra listen
-    const upcoming = parsedEvents.slice(0, 5);
-
-    if(upcoming.length === 0){
-        list.innerHTML = '<li class="upcoming-item">Ingen aktiviteter funnet</li>';
+    if(events.length === 0){
+        list.innerHTML = '<li class="dash-item" style="color:#64748b;">Ingen fellesaktiviteter denne dagen.</li>';
         return;
     }
 
-    upcoming.forEach(e => {
+    events.forEach(e => {
         const li = document.createElement("li");
-        li.className = "upcoming-item";
+        li.className = "dash-item";
         li.innerHTML = `
-            <span class="upcoming-date">${e.dato || e.mnd}</span>
-            <span class="upcoming-title" title="${e.aktivitet}">${e.aktivitet}</span>
+            <span class="event-title">${e.aktivitet}</span>
+            <div class="event-meta">
+                ${e.deltakere ? '<b>Deltakere:</b> ' + e.deltakere : ''} 
+                ${e.ansvar ? ' | <b>Ansvar:</b> ' + e.ansvar : ''}
+            </div>
         `;
         list.appendChild(li);
     });
 }
 
+/* Oppdaterer Rute 3: Nærmeste aktiviteter */
+function renderUpcoming(){
+    const list = document.getElementById("upcomingList");
+    list.innerHTML = "";
+
+    const upcoming = parsedEvents.slice(0, 5);
+
+    if(upcoming.length === 0){
+        list.innerHTML = '<li class="dash-item"><span class="event-meta">Ingen aktiviteter funnet</span></li>';
+        return;
+    }
+
+    upcoming.forEach(e => {
+        const li = document.createElement("li");
+        li.className = "dash-item upcoming-item";
+        li.innerHTML = `
+            <span class="event-title" title="${e.aktivitet}">${e.aktivitet}</span>
+            <span class="upcoming-date">${e.dato || e.mnd}</span>
+        `;
+        list.appendChild(li);
+    });
+}
+
+/* Tabellfiltrering */
 function filterTable(){
     let search = document.getElementById("searchInput").value.toUpperCase();
     let dVal = document.getElementById("deltakerFilter").value;
@@ -454,7 +513,6 @@ function resetFilters(){
     document.getElementById("searchInput").value="";
     document.getElementById("deltakerFilter").value="";
     document.getElementById("ansvarFilter").value="";
-    document.querySelectorAll(".cal-day").forEach(c => c.classList.remove("selected"));
     filterTable();
 }
 
