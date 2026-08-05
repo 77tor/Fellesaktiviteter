@@ -33,7 +33,7 @@ h1 { text-align:center; margin-bottom: 5px; }
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    height: 220px;
+    height: 240px;
     box-sizing: border-box;
 }
 
@@ -69,14 +69,16 @@ h1 { text-align:center; margin-bottom: 5px; }
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(8, 1fr); /* 1 for Uke-nr + 7 dager */
     gap: 2px;
     text-align: center;
     font-size: 11px;
 }
 .cal-day-name { font-weight: bold; color: #64748b; padding-bottom: 2px; font-size: 10px; }
+.cal-week-header { font-weight: bold; color: #94a3b8; font-size: 9px; }
+
 .cal-day {
-    padding: 4px 0;
+    padding: 3px 0;
     border-radius: 50%;
     cursor: pointer;
     position: relative;
@@ -86,8 +88,26 @@ h1 { text-align:center; margin-bottom: 5px; }
 .cal-day.empty { cursor: default; }
 .cal-day.empty:hover { background: transparent; }
 .cal-day.today { font-weight: bold; border: 1px solid #2c3e50; }
+
+/* Fargekoder for hendelser */
 .cal-day.has-event { background: #3b82f6; color: white; font-weight: bold; }
 .cal-day.has-event:hover { background: #2563eb; }
+.cal-day.has-week-event { background: #8b5cf6; color: white; } /* Lilla for ukeaktivitet */
+.cal-day.has-week-event:hover { background: #7c3aed; }
+.cal-day.has-both { background: #2563eb; color: white; border: 2px solid #8b5cf6; box-sizing: border-box; }
+
+.cal-week-num {
+    font-size: 10px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.cal-week-num:hover { background: #f1f5f9; color: #334155; }
+.cal-week-num.has-week-event { font-weight: bold; color: #7c3aed; background: #ede9fe; }
+
 .cal-day.selected { outline: 2px solid #000; font-weight: bold; }
 
 /* Lister for kort 2 og 3 */
@@ -106,6 +126,27 @@ h1 { text-align:center; margin-bottom: 5px; }
 .dash-item:last-child { border-bottom: none; }
 .dash-item .event-title { font-weight: bold; color: #1e293b; display: block; }
 .dash-item .event-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+/* Styling for uke-aktiviteter i visningsrute 2 */
+.dash-item.week-badge {
+    background: #f5f3ff;
+    border-left: 3px solid #8b5cf6;
+    padding-left: 6px;
+    margin-bottom: 6px;
+    border-radius: 0 4px 4px 0;
+}
+.week-tag {
+    display: inline-block;
+    background: #8b5cf6;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
 .upcoming-item { display: flex; justify-content: space-between; align-items: center; }
 .upcoming-date { font-weight: bold; color: #2563eb; white-space: nowrap; margin-right: 8px; }
 
@@ -159,7 +200,7 @@ th { background:#2c3e50; color:white; text-align: left; }
         <div class="calendar-grid" id="calendarGrid"></div>
     </div>
     
-    <!-- 2. Aktivitet(er) for valgt dag -->
+    <!-- 2. Aktivitet(er) for valgt dag / uke -->
     <div class="dash-card">
         <h3 id="selectedDateHeader">Aktivitet valgt dag</h3>
         <ul class="dash-list" id="selectedDateList">
@@ -256,6 +297,15 @@ function parseCSVLine(line, sep){
     return res.map(x=>x.replace(/^"|"$/g,""));
 }
 
+/* Hjelpefunksjon for å finne ISO-ukenummer */
+function getISOWeek(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+
 async function fetchData(){
     oppdaterSkolear();
     try {
@@ -303,7 +353,10 @@ function renderData(csv){
             monthPrev = mnd;
         }
 
-        parsedEvents.push({ mnd, aktivitet, dato, deltakere, ansvar });
+        // Sjekk om raden gjelder en uke
+        let weekNums = extractWeekNumbers(`${dato} ${aktivitet} ${mnd}`);
+
+        parsedEvents.push({ mnd, aktivitet, dato, deltakere, ansvar, weekNums });
 
         let tr = document.createElement("tr");
         tr.className = "month-color-" + colorIndex;
@@ -332,6 +385,19 @@ function renderData(csv){
     showEventsForDate(today.getDate(), today.getMonth());
 }
 
+/* Henter ut ukenummere fra teksten (f.eks "Uke 37", "U37", "Uke 37-38") */
+function extractWeekNumbers(text) {
+    let weeks = [];
+    let match;
+    let reg = /(?:uke|u)\.?\s*(\d+)(?:\s*[-–]\s*(\d+))?/gi;
+    while ((match = reg.exec(text)) !== null) {
+        let start = parseInt(match[1]);
+        let end = match[2] ? parseInt(match[2]) : start;
+        for(let w = start; w <= end; w++) weeks.push(w);
+    }
+    return weeks;
+}
+
 function byggFasteFilter(id, liste, standardTekst){
     const sel = document.getElementById(id);
     let current = sel.value;
@@ -355,42 +421,79 @@ function renderCalendar(){
 
     document.getElementById("calMonthYear").textContent = `${MANED_NAVN[month]} ${year}`;
 
-    const dayNames = ["M", "T", "O", "T", "F", "L", "S"];
-    dayNames.forEach(d => {
+    // Header rad: Uke-nr + Dagsnavn
+    const dayNames = ["U", "M", "T", "O", "T", "F", "L", "S"];
+    dayNames.forEach((d, idx) => {
         const el = document.createElement("div");
-        el.className = "cal-day-name";
+        el.className = idx === 0 ? "cal-week-header" : "cal-day-name";
         el.textContent = d;
         grid.appendChild(el);
     });
 
-    const firstDayIndex = new Date(year, month, 1).getDay();
+    const firstDate = new Date(year, month, 1);
+    const firstDayIndex = firstDate.getDay();
     const paddingDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    for(let i = 0; i < paddingDays; i++){
-        const el = document.createElement("div");
-        el.className = "cal-day empty";
-        grid.appendChild(el);
-    }
+    let currentDay = 1;
+    let today = new Date();
 
-    const today = new Date();
+    // Kalenderrader
+    while(currentDay <= daysInMonth) {
+        // Beregn ukenummer for mandagen i den aktuelle uken
+        let referenceDate = new Date(year, month, currentDay);
+        let weekNum = getISOWeek(referenceDate);
 
-    for(let day = 1; day <= daysInMonth; day++){
-        const el = document.createElement("div");
-        el.className = "cal-day";
-        el.textContent = day;
+        // Sjekk om uken har noen uke-aktiviteter
+        let weekEvents = getWeekEvents(weekNum, month);
 
-        const eventsOnDay = getEventsForDate(day, month);
-        if(eventsOnDay.length > 0) el.classList.add("has-event");
-        if(day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) el.classList.add("today");
+        // Uke-kolonne
+        const weekEl = document.createElement("div");
+        weekEl.className = "cal-week-num";
+        if(weekEvents.length > 0) weekEl.classList.add("has-week-event");
+        weekEl.textContent = weekNum;
+        weekEl.title = `Uke ${weekNum}`;
+        grid.appendChild(weekEl);
 
-        el.onclick = () => {
-            document.querySelectorAll(".cal-day").forEach(c => c.classList.remove("selected"));
-            el.classList.add("selected");
-            showEventsForDate(day, month);
-        };
+        // 7 dager i uken
+        for(let col = 0; col < 7; col++) {
+            if((currentDay === 1 && col < paddingDays) || currentDay > daysInMonth) {
+                const emptyEl = document.createElement("div");
+                emptyEl.className = "cal-day empty";
+                grid.appendChild(emptyEl);
+            } else {
+                const dayEl = document.createElement("div");
+                dayEl.className = "cal-day";
+                dayEl.textContent = currentDay;
 
-        grid.appendChild(el);
+                const dayDate = new Date(year, month, currentDay);
+                const dayWeek = getISOWeek(dayDate);
+
+                const singleEvents = getSingleEventsForDate(currentDay, month);
+                const weekEventsForDay = getWeekEvents(dayWeek, month);
+
+                const hasSingle = singleEvents.length > 0;
+                const hasWeek = weekEventsForDay.length > 0;
+
+                if(hasSingle && hasWeek) dayEl.classList.add("has-both");
+                else if(hasSingle) dayEl.classList.add("has-event");
+                else if(hasWeek) dayEl.classList.add("has-week-event");
+
+                if(currentDay === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayEl.classList.add("today");
+                }
+
+                let thisDay = currentDay;
+                dayEl.onclick = () => {
+                    document.querySelectorAll(".cal-day").forEach(c => c.classList.remove("selected"));
+                    dayEl.classList.add("selected");
+                    showEventsForDate(thisDay, month);
+                };
+
+                grid.appendChild(dayEl);
+                currentDay++;
+            }
+        }
     }
 }
 
@@ -399,58 +502,86 @@ function changeMonth(delta){
     renderCalendar();
 }
 
-/* Hjelpefunksjon for å finne rader basert på dato OG måned */
-function getEventsForDate(day, monthIdx){
+/* Finner enkeltdato-aktiviteter */
+function getSingleEventsForDate(day, monthIdx){
     const valgtManedNavn = MANED_NAVN[monthIdx].toLowerCase();
     
     let dayPadded = day < 10 ? "0" + day : "" + day;
     let monthPadded = (monthIdx + 1) < 10 ? "0" + (monthIdx + 1) : "" + (monthIdx + 1);
     
-    // Format som sjekkes i Dato-feltet (f.eks "05.08", "5.8", "5.")
     let matchNumeric1 = `${dayPadded}.${monthPadded}`;
     let matchNumeric2 = `${day}.${monthIdx + 1}.`;
 
     return parsedEvents.filter(e => {
+        // Hopp over rene uke-aktiviteter
+        if(e.weekNums.length > 0 && !e.dato.includes(".")) return false;
+
         let mndText = (e.mnd || "").toLowerCase();
         let datoText = (e.dato || "");
 
-        // Sjekk 1: Om mnd-feltet matcher den viste måneden
         let matchManed = mndText.includes(valgtManedNavn);
-
-        // Sjekk 2: Sjekk om datoen inneholder enten tall/måned eller siffer med punktum
         let matchDag = datoText.includes(matchNumeric1) || 
                        datoText.includes(matchNumeric2) || 
                        datoText.startsWith(day + ".") || 
                        datoText.startsWith(dayPadded + ".");
 
-        // Hvis måneden matcher i teksten OG dagen matcher i dato-feltet
         if (matchManed && matchDag) return true;
-
-        // Dersom dato-feltet er formatert direkte med DD.MM (f.eks "15.08"), sjekk det UAHENGIG av teksten
         if (datoText.includes(matchNumeric1) || datoText.includes(matchNumeric2)) return true;
 
         return false;
     });
 }
 
-/* Oppdaterer Rute 2: Aktivitet på valgt dag */
+/* Finner uke-aktiviteter for en gitt uke */
+function getWeekEvents(weekNum, monthIdx){
+    const valgtManedNavn = MANED_NAVN[monthIdx].toLowerCase();
+    return parsedEvents.filter(e => {
+        if(!e.weekNums.includes(weekNum)) return false;
+        let mndText = (e.mnd || "").toLowerCase();
+        return mndText.includes(valgtManedNavn) || e.mnd === "";
+    });
+}
+
+/* Oppdaterer Rute 2: Visning av valgt dag & ukeaktivitet */
 function showEventsForDate(day, monthIdx){
     const header = document.getElementById("selectedDateHeader");
     const list = document.getElementById("selectedDateList");
     
     let dayStr = day < 10 ? "0" + day : "" + day;
     let monthStr = (monthIdx + 1) < 10 ? "0" + (monthIdx + 1) : "" + (monthIdx + 1);
-    header.textContent = `Aktivitet ${dayStr}.${monthStr}`;
+    
+    const d = new Date(currentCalDate.getFullYear(), monthIdx, day);
+    const weekNum = getISOWeek(d);
 
-    const events = getEventsForDate(day, monthIdx);
+    header.textContent = `Aktivitet ${dayStr}.${monthStr} (Uke ${weekNum})`;
+
+    const singleEvents = getSingleEventsForDate(day, monthIdx);
+    const weekEvents = getWeekEvents(weekNum, monthIdx);
+
     list.innerHTML = "";
 
-    if(events.length === 0){
+    if(singleEvents.length === 0 && weekEvents.length === 0){
         list.innerHTML = '<li class="dash-item" style="color:#64748b;">Ingen fellesaktiviteter denne dagen.</li>';
         return;
     }
 
-    events.forEach(e => {
+    // Vis ukeaktiviteter øverst med lilla fremheving
+    weekEvents.forEach(e => {
+        const li = document.createElement("li");
+        li.className = "dash-item week-badge";
+        li.innerHTML = `
+            <span class="week-tag">Ukeaktivitet (Uke ${weekNum})</span>
+            <span class="event-title">${e.aktivitet}</span>
+            <div class="event-meta">
+                ${e.deltakere ? '<b>Deltakere:</b> ' + e.deltakere : ''} 
+                ${e.ansvar ? ' | <b>Ansvar:</b> ' + e.ansvar : ''}
+            </div>
+        `;
+        list.appendChild(li);
+    });
+
+    // Vis dato-spesifikke aktiviteter
+    singleEvents.forEach(e => {
         const li = document.createElement("li");
         li.className = "dash-item";
         li.innerHTML = `
@@ -501,7 +632,6 @@ function filterTable(){
         let a = r.getAttribute("data-ansvar") || "";
         let t = r.textContent.toUpperCase();
 
-        // Deltaker filtrering
         let matchDeltaker = (dVal === "");
         if (!matchDeltaker) {
             let direkteMatch = d.includes(dVal);
@@ -513,7 +643,6 @@ function filterTable(){
             matchDeltaker = direkteMatch || gjelderAlle || erHestasenSone || erBrattbakkenSone;
         }
 
-        // Ansvar filtrering
         let matchAnsvar = (aVal === "");
         if (!matchAnsvar) {
             let direkteMatch = a.includes(aVal);
@@ -521,7 +650,6 @@ function filterTable(){
             matchAnsvar = direkteMatch || gjelderAlle;
         }
 
-        // Søkefelt
         let matchSok = t.includes(search);
 
         let ok = matchDeltaker && matchAnsvar && matchSok;
