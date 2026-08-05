@@ -101,6 +101,18 @@ th { background:#2c3e50; color:white; }
 
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBt4leeUPe4YsOM7rjGDaT7Eq322BVnExQvVIxhMeFqcATE7kqoYWay7k7lRH1cULOen7rEF6d6pSY/pub?output=csv";
 
+// Faste valg for Deltakelse-menyen
+const FASTE_DELTAKER = [
+    "Alle trinn",
+    "1. trinn",
+    "2. trinn",
+    "3. trinn",
+    "4. trinn",
+    "5. trinn",
+    "6. trinn",
+    "7. trinn"
+];
+
 // Faste valg for Ansvar-menyen
 const FASTE_ANSVAR = [
     "1. trinn",
@@ -193,8 +205,6 @@ function renderTable(csv){
 
     let monthPrev="";
     let colorIndex=0;
-
-    let dSet=new Set();
     let seen=new Set(); // ✅ unngå duplikater
 
     lines.forEach((line,i)=>{
@@ -212,8 +222,6 @@ function renderTable(csv){
             monthPrev=mnd;
         }
 
-        deltakere.split(",").forEach(x=>dSet.add(x.trim()));
-
         let tr=document.createElement("tr");
         tr.className="month-color-"+colorIndex;
 
@@ -230,36 +238,19 @@ function renderTable(csv){
         body.appendChild(tr);
     });
 
-    byggFilter("deltakerFilter", dSet);
-    byggFasteAnsvarFilter("ansvarFilter");
+    byggFasteFilter("deltakerFilter", FASTE_DELTAKER, "Alle deltakere");
+    byggFasteFilter("ansvarFilter", FASTE_ANSVAR, "Alle ansvar");
 
     document.getElementById("aktivitetsTabell").style.display="table";
 }
 
-function byggFilter(id, set){
+function byggFasteFilter(id, liste, standardTekst){
     const sel=document.getElementById(id);
     let current=sel.value;
 
-    sel.innerHTML='<option value="">Alle deltakere</option>';
+    sel.innerHTML=`<option value="">${standardTekst}</option>`;
 
-    [...set].sort().forEach(v=>{
-        if(!v) return;
-        let o=document.createElement("option");
-        o.value=v.toUpperCase();
-        o.textContent=v;
-        sel.appendChild(o);
-    });
-
-    sel.value=current;
-}
-
-function byggFasteAnsvarFilter(id){
-    const sel=document.getElementById(id);
-    let current=sel.value;
-
-    sel.innerHTML='<option value="">Alle ansvar</option>';
-
-    FASTE_ANSVAR.forEach(v=>{
+    liste.forEach(v=>{
         let o=document.createElement("option");
         o.value=v.toUpperCase();
         o.textContent=v;
@@ -288,8 +279,14 @@ function filterTable(){
         if (!matchDeltaker) {
             let direkteMatch = d.includes(dVal);
             let gjelderAlle = d.includes("ALLE");
-            let erHestasenSone = (dVal.includes("1") || dVal.includes("2") || dVal.includes("3") || dVal.includes("HESTÅSEN")) && d.includes("HESTÅSEN");
-            let erBrattbakkenSone = (dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7") || dVal.includes("BRATTBAKKEN")) && d.includes("BRATTBAKKEN");
+            
+            // Sjekk om valgt filter gjelder Heståsen (1., 2., 3. trinn)
+            let erHestasenKandidat = dVal.includes("1") || dVal.includes("2") || dVal.includes("3");
+            let erHestasenSone = erHestasenKandidat && d.includes("HESTÅSEN");
+
+            // Sjekk om valgt filter gjelder Brattbakken (4., 5., 6., 7. trinn)
+            let erBrattbakkenKandidat = dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7");
+            let erBrattbakkenSone = erBrattbakkenKandidat && d.includes("BRATTBAKKEN");
 
             matchDeltaker = direkteMatch || gjelderAlle || erHestasenSone || erBrattbakkenSone;
         }
