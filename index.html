@@ -6,18 +6,22 @@
 <title>Fellesaktiviteter</title>
 
 <style>
-body { font-family: Arial, sans-serif; background:#f8f9fa; margin:20px;}
-.container { max-width:1100px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
-h1 { text-align:center; margin-bottom: 5px; }
+/* Mindre luft øverst på siden */
+body { font-family: Arial, sans-serif; background:#f8f9fa; margin: 10px 20px 20px 20px; }
+.container { max-width:1100px; margin:auto; background:white; padding: 15px 20px; border-radius:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
+
+/* Tettere overskrift og undertekst */
+h1 { text-align:center; margin-top: 0; margin-bottom: 2px; font-size: 24px; }
+#skolearVisning { text-align:center; color:#7f8c8d; font-weight:bold; margin-bottom: 12px; font-size: 13px; }
 
 /* Dashboard / 3-delt øvre seksjon */
 .dashboard {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: 12px;
+    margin-bottom: 15px;
     background: #f1f5f9;
-    padding: 15px;
+    padding: 10px;
     border-radius: 8px;
 }
 
@@ -25,26 +29,26 @@ h1 { text-align:center; margin-bottom: 5px; }
     .dashboard { grid-template-columns: 1fr; }
 }
 
-/* Felles styling for kortene i dashboardet */
+/* Redusert høyde på kortene (fra 240px til 190px) */
 .dash-card {
     background: white;
-    padding: 12px;
+    padding: 8px 10px;
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    height: 240px;
+    height: 190px;
     box-sizing: border-box;
 }
 
 .dash-card h3 { 
-    margin: 0 0 10px 0; 
-    font-size: 13px; 
+    margin: 0 0 6px 0; 
+    font-size: 11px; 
     color: #334155; 
     text-transform: uppercase; 
     letter-spacing: 0.5px;
     border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 5px;
+    padding-bottom: 3px;
 }
 
 /* Mini Kalender Styling */
@@ -53,12 +57,12 @@ h1 { text-align:center; margin-bottom: 5px; }
     justify-content: space-between;
     align-items: center;
     font-weight: bold;
-    font-size: 13px;
-    margin-bottom: 8px;
+    font-size: 12px;
+    margin-bottom: 4px;
 }
 .calendar-header button {
-    padding: 1px 6px;
-    font-size: 12px;
+    padding: 0 5px;
+    font-size: 11px;
     background: #e2e8f0;
     color: #333;
     border: none;
@@ -69,16 +73,16 @@ h1 { text-align:center; margin-bottom: 5px; }
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr); /* 1 for Uke-nr + 7 dager */
-    gap: 2px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 1px;
     text-align: center;
-    font-size: 11px;
+    font-size: 10px;
 }
-.cal-day-name { font-weight: bold; color: #64748b; padding-bottom: 2px; font-size: 10px; }
-.cal-week-header { font-weight: bold; color: #94a3b8; font-size: 9px; }
+.cal-day-name { font-weight: bold; color: #64748b; padding-bottom: 1px; font-size: 9px; }
+.cal-week-header { font-weight: bold; color: #94a3b8; font-size: 8px; }
 
 .cal-day {
-    padding: 3px 0;
+    padding: 1px 0;
     border-radius: 50%;
     cursor: pointer;
     position: relative;
@@ -91,31 +95,13 @@ h1 { text-align:center; margin-bottom: 5px; }
 .cal-day.today { font-weight: bold; border: 1px solid #2c3e50; }
 
 /* Fargekoder for hendelser */
-/* 1. Enkeltdagsaktiviteter: Fylt blå boble */
-.cal-day.has-event { 
-    background: #3b82f6; 
-    color: white; 
-    font-weight: bold; 
-}
+.cal-day.has-event { background: #3b82f6; color: white; font-weight: bold; }
 .cal-day.has-event:hover { background: #2563eb; }
+.cal-day.has-week-event { border-bottom: 2px solid #10b981; border-radius: 2px; }
+.cal-day.has-both { background: #3b82f6; color: white; font-weight: bold; border-bottom: 2px solid #10b981; }
 
-/* 2. Ukeaktiviteter: Grønn strek under datoen */
-.cal-day.has-week-event { 
-    border-bottom: 3px solid #10b981; 
-    border-radius: 4px; 
-}
-
-/* 3. Både dag- og ukeaktivitet: Blå boble MED grønn understrek */
-.cal-day.has-both { 
-    background: #3b82f6; 
-    color: white; 
-    font-weight: bold; 
-    border-bottom: 3px solid #10b981; 
-}
-
-/* Ukenummersøyle til venstre */
 .cal-week-num {
-    font-size: 10px;
+    font-size: 9px;
     color: #94a3b8;
     display: flex;
     align-items: center;
@@ -137,58 +123,57 @@ h1 { text-align:center; margin-bottom: 5px; }
     flex-grow: 1; 
 }
 .dash-item {
-    padding: 6px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #f1f5f9;
-    font-size: 12px;
+    font-size: 11px;
 }
 .dash-item:last-child { border-bottom: none; }
-.dash-item .event-title { font-weight: bold; color: #1e293b; display: block; }
-.dash-item .event-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+.dash-item .event-title { font-weight: bold; color: #1e293b; display: block; line-height: 1.2; }
+.dash-item .event-meta { font-size: 10px; color: #64748b; margin-top: 1px; }
 
-/* Styling for uke-aktiviteter i visningsrute 2 (Grønn stil) */
 .dash-item.week-badge {
     background: #ecfdf5;
     border-left: 3px solid #10b981;
-    padding-left: 6px;
-    margin-bottom: 6px;
+    padding-left: 5px;
+    margin-bottom: 4px;
     border-radius: 0 4px 4px 0;
 }
 .week-tag {
     display: inline-block;
     background: #10b981;
     color: white;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: bold;
-    padding: 1px 5px;
-    border-radius: 3px;
+    padding: 1px 4px;
+    border-radius: 2px;
     text-transform: uppercase;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .upcoming-item { display: flex; justify-content: space-between; align-items: center; }
-.upcoming-date { font-weight: bold; color: #2563eb; white-space: nowrap; margin-right: 8px; }
+.upcoming-date { font-weight: bold; color: #2563eb; white-space: nowrap; margin-right: 6px; font-size: 10px; }
 
 /* Filter Kontroller */
 .controls {
     display:grid;
-    grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
-    gap:15px;
-    margin-bottom:20px;
+    grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+    gap:10px;
+    margin-bottom:15px;
     align-items: end;
 }
-.filter-group { display: flex; flex-direction: column; gap: 5px; }
-label { font-size: 11px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+.filter-group { display: flex; flex-direction: column; gap: 3px; }
+label { font-size: 10px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
 
-input, select, .reset-btn { padding:8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; width: 100%; box-sizing: border-box; }
-.reset-btn { background: #95a5a6; color: white; cursor: pointer; border: none; font-weight: bold; padding: 9px; }
+input, select, .reset-btn { padding:6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 100%; box-sizing: border-box; }
+.reset-btn { background: #95a5a6; color: white; cursor: pointer; border: none; font-weight: bold; padding: 7px; }
 .reset-btn:hover { background: #7f8c8d; }
 
-table { width:100%; border-collapse: collapse; display:none; margin-top: 10px; }
-th, td { padding:10px; border-bottom:1px solid #ddd; }
+table { width:100%; border-collapse: collapse; display:none; margin-top: 5px; }
+th, td { padding:8px; border-bottom:1px solid #ddd; font-size: 13px; }
 th { background:#2c3e50; color:white; text-align: left; }
 
-.status-msg { text-align:center; padding:20px; }
-.no-results { text-align:center; color:red; display:none; padding: 15px; }
+.status-msg { text-align:center; padding:15px; }
+.no-results { text-align:center; color:red; display:none; padding: 10px; }
 
 .month-color-0 { background:#fff; }
 .month-color-1 { background:#f0f7ff; }
@@ -204,9 +189,9 @@ th { background:#2c3e50; color:white; text-align: left; }
 <div class="container">
 
 <h1>Fellesaktiviteter</h1>
-<div id="skolearVisning" style="text-align:center; color:#7f8c8d; font-weight:bold; margin-bottom:15px;"></div>
+<div id="skolearVisning"></div>
 
-<!-- 3-delt Dashboard -->
+<!-- 3-delt Dashboard (Nå med redusert høyde) -->
 <div class="dashboard">
     <!-- 1. Kalender -->
     <div class="dash-card">
@@ -315,7 +300,6 @@ function parseCSVLine(line, sep){
     return res.map(x=>x.replace(/^"|"$/g,""));
 }
 
-/* Hjelpefunksjon for å finne ISO-ukenummer */
 function getISOWeek(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -371,7 +355,6 @@ function renderData(csv){
             monthPrev = mnd;
         }
 
-        // Sjekk om raden gjelder en uke
         let weekNums = extractWeekNumbers(`${dato} ${aktivitet} ${mnd}`);
 
         parsedEvents.push({ mnd, aktivitet, dato, deltakere, ansvar, weekNums });
@@ -398,12 +381,10 @@ function renderData(csv){
     renderCalendar();
     renderUpcoming();
     
-    // Vis aktiviteter for dagens dato som standard
     const today = new Date();
     showEventsForDate(today.getDate(), today.getMonth());
 }
 
-/* Henter ut ukenummere fra teksten (f.eks "Uke 37", "U37", "Uke 37-38") */
 function extractWeekNumbers(text) {
     let weeks = [];
     let match;
@@ -429,7 +410,6 @@ function byggFasteFilter(id, liste, standardTekst){
     sel.value = current;
 }
 
-/* Kalender Logikk */
 function renderCalendar(){
     const grid = document.getElementById("calendarGrid");
     grid.innerHTML = "";
@@ -439,7 +419,6 @@ function renderCalendar(){
 
     document.getElementById("calMonthYear").textContent = `${MANED_NAVN[month]} ${year}`;
 
-    // Header rad: Uke-nr + Dagsnavn
     const dayNames = ["U", "M", "T", "O", "T", "F", "L", "S"];
     dayNames.forEach((d, idx) => {
         const el = document.createElement("div");
@@ -456,14 +435,12 @@ function renderCalendar(){
     let currentDay = 1;
     let today = new Date();
 
-    // Kalenderrader
     while(currentDay <= daysInMonth) {
         let referenceDate = new Date(year, month, currentDay);
         let weekNum = getISOWeek(referenceDate);
 
         let weekEvents = getWeekEvents(weekNum, month);
 
-        // Uke-kolonne
         const weekEl = document.createElement("div");
         weekEl.className = "cal-week-num";
         if(weekEvents.length > 0) weekEl.classList.add("has-week-event");
@@ -471,7 +448,6 @@ function renderCalendar(){
         weekEl.title = `Uke ${weekNum}`;
         grid.appendChild(weekEl);
 
-        // 7 dager i uken
         for(let col = 0; col < 7; col++) {
             if((currentDay === 1 && col < paddingDays) || currentDay > daysInMonth) {
                 const emptyEl = document.createElement("div");
@@ -491,7 +467,6 @@ function renderCalendar(){
                 const hasSingle = singleEvents.length > 0;
                 const hasWeek = weekEventsForDay.length > 0;
 
-                // Påfør riktig fargekoding
                 if(hasSingle && hasWeek) dayEl.classList.add("has-both");
                 else if(hasSingle) dayEl.classList.add("has-event");
                 else if(hasWeek) dayEl.classList.add("has-week-event");
@@ -519,7 +494,6 @@ function changeMonth(delta){
     renderCalendar();
 }
 
-/* Finner enkeltdato-aktiviteter */
 function getSingleEventsForDate(day, monthIdx){
     const valgtManedNavn = MANED_NAVN[monthIdx].toLowerCase();
     
@@ -548,7 +522,6 @@ function getSingleEventsForDate(day, monthIdx){
     });
 }
 
-/* Finner uke-aktiviteter for en gitt uke */
 function getWeekEvents(weekNum, monthIdx){
     const valgtManedNavn = MANED_NAVN[monthIdx].toLowerCase();
     return parsedEvents.filter(e => {
@@ -558,7 +531,6 @@ function getWeekEvents(weekNum, monthIdx){
     });
 }
 
-/* Oppdaterer Rute 2: Visning av valgt dag & ukeaktivitet */
 function showEventsForDate(day, monthIdx){
     const header = document.getElementById("selectedDateHeader");
     const list = document.getElementById("selectedDateList");
@@ -581,7 +553,6 @@ function showEventsForDate(day, monthIdx){
         return;
     }
 
-    // Vis ukeaktiviteter øverst med grønn merking
     weekEvents.forEach(e => {
         const li = document.createElement("li");
         li.className = "dash-item week-badge";
@@ -596,7 +567,6 @@ function showEventsForDate(day, monthIdx){
         list.appendChild(li);
     });
 
-    // Vis dato-spesifikke aktiviteter
     singleEvents.forEach(e => {
         const li = document.createElement("li");
         li.className = "dash-item";
@@ -611,7 +581,6 @@ function showEventsForDate(day, monthIdx){
     });
 }
 
-/* Oppdaterer Rute 3: Nærmeste aktiviteter */
 function renderUpcoming(){
     const list = document.getElementById("upcomingList");
     list.innerHTML = "";
@@ -634,7 +603,6 @@ function renderUpcoming(){
     });
 }
 
-/* Tabellfiltrering */
 function filterTable(){
     let search = document.getElementById("searchInput").value.toUpperCase();
     let dVal = document.getElementById("deltakerFilter").value;
