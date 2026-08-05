@@ -101,6 +101,21 @@ th { background:#2c3e50; color:white; }
 
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBt4leeUPe4YsOM7rjGDaT7Eq322BVnExQvVIxhMeFqcATE7kqoYWay7k7lRH1cULOen7rEF6d6pSY/pub?output=csv";
 
+// Faste valg for Ansvar-menyen
+const FASTE_ANSVAR = [
+    "1. trinn",
+    "2. trinn",
+    "3. trinn",
+    "4. trinn",
+    "5. trinn",
+    "6. trinn",
+    "7. trinn",
+    "Elevrådet",
+    "FAU",
+    "Kirka",
+    "Alle trinn"
+];
+
 function oppdaterSkolear(){
     const d=new Date();
     const y=d.getFullYear();
@@ -180,7 +195,6 @@ function renderTable(csv){
     let colorIndex=0;
 
     let dSet=new Set();
-    let aSet=new Set();
     let seen=new Set(); // ✅ unngå duplikater
 
     lines.forEach((line,i)=>{
@@ -199,7 +213,6 @@ function renderTable(csv){
         }
 
         deltakere.split(",").forEach(x=>dSet.add(x.trim()));
-        ansvar.split(",").forEach(x=>aSet.add(x.trim()));
 
         let tr=document.createElement("tr");
         tr.className="month-color-"+colorIndex;
@@ -217,13 +230,13 @@ function renderTable(csv){
         body.appendChild(tr);
     });
 
-    byggFilter("deltakerFilter",dSet);
-    byggFilter("ansvarFilter",aSet);
+    byggFilter("deltakerFilter", dSet);
+    byggFasteAnsvarFilter("ansvarFilter");
 
     document.getElementById("aktivitetsTabell").style.display="table";
 }
 
-function byggFilter(id,set){
+function byggFilter(id, set){
     const sel=document.getElementById(id);
     let current=sel.value;
 
@@ -231,6 +244,22 @@ function byggFilter(id,set){
 
     [...set].sort().forEach(v=>{
         if(!v) return;
+        let o=document.createElement("option");
+        o.value=v.toUpperCase();
+        o.textContent=v;
+        sel.appendChild(o);
+    });
+
+    sel.value=current;
+}
+
+function byggFasteAnsvarFilter(id){
+    const sel=document.getElementById(id);
+    let current=sel.value;
+
+    sel.innerHTML='<option value="">Alle ansvar</option>';
+
+    FASTE_ANSVAR.forEach(v=>{
         let o=document.createElement("option");
         o.value=v.toUpperCase();
         o.textContent=v;
@@ -257,25 +286,21 @@ function filterTable(){
         let matchDeltaker = (dVal === "");
 
         if (!matchDeltaker) {
-            // 1. Sjekk om teksten matcher direkte
             let direkteMatch = d.includes(dVal);
-
-            // 2. Er raden merket med "ALLE" (gjelder alle trinn 1-7)
             let gjelderAlle = d.includes("ALLE");
-
-            // 3. Sjekk om det er Heståsen (1.-3. trinn)
             let erHestasenSone = (dVal.includes("1") || dVal.includes("2") || dVal.includes("3") || dVal.includes("HESTÅSEN")) && d.includes("HESTÅSEN");
-
-            // 4. Sjekk om det er Brattbakken (4.-7. trinn)
             let erBrattbakkenSone = (dVal.includes("4") || dVal.includes("5") || dVal.includes("6") || dVal.includes("7") || dVal.includes("BRATTBAKKEN")) && d.includes("BRATTBAKKEN");
 
             matchDeltaker = direkteMatch || gjelderAlle || erHestasenSone || erBrattbakkenSone;
         }
 
-        // --- Ansvar-logikk ---
+        // --- Ansvar-logikk for faste valg ---
         let matchAnsvar = (aVal === "");
         if (!matchAnsvar) {
-            matchAnsvar = a.includes(aVal) || a.includes("ALLE");
+            let direkteMatch = a.includes(aVal);
+            let gjelderAlle = a.includes("ALLE");
+
+            matchAnsvar = direkteMatch || gjelderAlle;
         }
 
         // --- Søkefelt ---
