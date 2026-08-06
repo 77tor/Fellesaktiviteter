@@ -19,7 +19,7 @@ h1 { text-align:center; margin-top: 0; margin-bottom: 2px; font-size: 24px; }
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    margin-bottom: 5px;
+    margin-bottom: 15px;
     background: #f1f5f9;
     padding: 10px;
     border-radius: 8px;
@@ -29,7 +29,7 @@ h1 { text-align:center; margin-top: 0; margin-bottom: 2px; font-size: 24px; }
     .dashboard { grid-template-columns: 1fr; }
 }
 
-/* Redusert høyde på kortene (fra 240px til 190px) */
+/* Redusert høyde på kortene */
 .dash-card {
     background: white;
     padding: 8px 10px;
@@ -37,7 +37,7 @@ h1 { text-align:center; margin-top: 0; margin-bottom: 2px; font-size: 24px; }
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    height: 170px;
+    height: 190px;
     box-sizing: border-box;
 }
 
@@ -71,19 +71,23 @@ h1 { text-align:center; margin-top: 0; margin-bottom: 2px; font-size: 24px; }
 }
 .calendar-header button:hover { background: #cbd5e1; }
 
+/* Asymmetrisk grid: Smal ukesøyle (0.7fr), store ukedager (1.1fr x 5), smale helgedager (0.6fr x 2) */
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: 0.7fr repeat(5, 1.1fr) repeat(2, 0.6fr);
     gap: 1px;
     text-align: center;
     font-size: 10px;
 }
+
 .cal-day-name { font-weight: bold; color: #64748b; padding-bottom: 1px; font-size: 9px; }
+.cal-day-name.weekend { color: #94a3b8; font-weight: normal; } /* Nedtonet header for helg */
+
 .cal-week-header { font-weight: bold; color: #94a3b8; font-size: 8px; }
 
 .cal-day {
     padding: 1px 0;
-    border-radius: 50%;
+    border-radius: 4px;
     cursor: pointer;
     position: relative;
     user-select: none;
@@ -94,10 +98,17 @@ h1 { text-align:center; margin-top: 0; margin-bottom: 2px; font-size: 24px; }
 .cal-day.empty:hover { background: transparent; }
 .cal-day.today { font-weight: bold; border: 1px solid #2c3e50; }
 
+/* Egne stiler for helgedager */
+.cal-day.weekend-day {
+    font-size: 9px;
+    color: #94a3b8;
+    background: #fafafa;
+}
+
 /* Fargekoder for hendelser */
 .cal-day.has-event { background: #3b82f6; color: white; font-weight: bold; }
 .cal-day.has-event:hover { background: #2563eb; }
-.cal-day.has-week-event { border-bottom: 2px solid #10b981; border-radius: 2px; }
+.cal-day.has-week-event { border-bottom: 2px solid #10b981; }
 .cal-day.has-both { background: #3b82f6; color: white; font-weight: bold; border-bottom: 2px solid #10b981; }
 
 .cal-week-num {
@@ -191,7 +202,7 @@ th { background:#2c3e50; color:white; text-align: left; }
 <h1>Fellesaktiviteter</h1>
 <div id="skolearVisning"></div>
 
-<!-- 3-delt Dashboard (Nå med redusert høyde) -->
+<!-- 3-delt Dashboard -->
 <div class="dashboard">
     <!-- 1. Kalender -->
     <div class="dash-card">
@@ -419,11 +430,26 @@ function renderCalendar(){
 
     document.getElementById("calMonthYear").textContent = `${MANED_NAVN[month]} ${year}`;
 
-    const dayNames = ["U", "M", "T", "O", "T", "F", "L", "S"];
+    // Uke-header: Merk Lørdag og Søndag som helg
+    const dayNames = [
+        { name: "U", isWeekend: false },
+        { name: "M", isWeekend: false },
+        { name: "T", isWeekend: false },
+        { name: "O", isWeekend: false },
+        { name: "T", isWeekend: false },
+        { name: "F", isWeekend: false },
+        { name: "L", isWeekend: true },
+        { name: "S", isWeekend: true }
+    ];
+
     dayNames.forEach((d, idx) => {
         const el = document.createElement("div");
-        el.className = idx === 0 ? "cal-week-header" : "cal-day-name";
-        el.textContent = d;
+        if (idx === 0) {
+            el.className = "cal-week-header";
+        } else {
+            el.className = d.isWeekend ? "cal-day-name weekend" : "cal-day-name";
+        }
+        el.textContent = d.name;
         grid.appendChild(el);
     });
 
@@ -457,6 +483,11 @@ function renderCalendar(){
                 const dayEl = document.createElement("div");
                 dayEl.className = "cal-day";
                 dayEl.textContent = currentDay;
+
+                // Sjekk om dagen er en helgedag (Lørdag = col 5, Søndag = col 6)
+                if (col === 5 || col === 6) {
+                    dayEl.classList.add("weekend-day");
+                }
 
                 const dayDate = new Date(year, month, currentDay);
                 const dayWeek = getISOWeek(dayDate);
