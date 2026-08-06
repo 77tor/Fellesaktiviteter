@@ -372,8 +372,44 @@ tr:last-child td { border-bottom: none; }
 
 <div class="container">
 
-<header>
-    <h1>Fellesaktiviteter</h1>
+<header style="display: flex; flex-direction: column; align-items: center;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 120" width="280" height="70" style="max-width: 100%;">
+      <defs>
+        <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4f46e5" />
+          <stop offset="100%" stop-color="#3730a3" />
+        </linearGradient>
+        <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#10b981" />
+          <stop offset="100%" stop-color="#059669" />
+        </linearGradient>
+      </defs>
+      
+      <!-- Ikon Symbol -->
+      <g transform="translate(10, 10)">
+        <!-- Kalender Base -->
+        <rect x="10" y="25" width="75" height="70" rx="14" fill="url(#primaryGrad)" />
+        <!-- Kalender Topp/Header -->
+        <path d="M 10 39 C 10 31, 16 25, 24 25 L 71 25 C 79 25, 85 31, 85 39 L 85 45 L 10 45 Z" fill="#4338ca" />
+        <!-- Rings -->
+        <rect x="26" y="17" width="6" height="14" rx="3" fill="#cbd5e1" />
+        <rect x="63" y="17" width="6" height="14" rx="3" fill="#cbd5e1" />
+        <!-- Grid Dots / Aktiviteter -->
+        <circle cx="28" cy="60" r="4" fill="#ffffff" opacity="0.9" />
+        <circle cx="47.5" cy="60" r="4" fill="#ffffff" opacity="0.9" />
+        <circle cx="67" cy="60" r="4" fill="url(#accentGrad)" />
+        <circle cx="28" cy="78" r="4" fill="#ffffff" opacity="0.9" />
+        <circle cx="47.5" cy="78" r="4" fill="url(#accentGrad)" />
+        <circle cx="67" cy="78" r="4" fill="#ffffff" opacity="0.9" />
+        <!-- Mini Skolehatt Badge -->
+        <path d="M 68 18 L 90 26 L 68 34 L 46 26 Z" fill="url(#accentGrad)" />
+        <path d="M 54 31.5 L 54 40 C 54 44, 82 44, 82 40 L 82 31.5" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" />
+      </g>
+
+      <!-- Tekst -->
+      <text x="115" y="62" font-family="'Inter', -apple-system, sans-serif" font-weight="700" font-size="34" fill="#0f172a" letter-spacing="-0.5">Fellesaktiviteter</text>
+      <text x="116" y="88" font-family="'Inter', -apple-system, sans-serif" font-weight="600" font-size="14" fill="#4f46e5" letter-spacing="1.5">SKOLEKALENDER</text>
+    </svg>
     <div id="skolearVisning"></div>
 </header>
 
